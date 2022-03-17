@@ -292,6 +292,68 @@ override these defaults via a command line option mechanism. The latter
 can be used for debugging purposes or for enabling a specific driver,
 ACPI table, or KVM CPUID functionality that is required for a particular
 deployment scenario.</p>
+<table border="1" class="colwidths-given docutils" id="id7">
+<caption><span class="caption-text">Filter status</span></caption>
+<colgroup>
+<col width="25%" />
+<col width="75%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Filter name</th>
+<th class="head">Purpose and current state</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>Driver filter</td>
+<td>Limits a set of drivers that are enabled in runtime for the TD guest kernel.
+By default, all PCI and ACPI bus drivers are blocked unless they are in the allow
+list. The current default allow list for the PCI bus is limited to the
+following virtio drivers: virtio_net, virtio_console, virtio_blk, and
+9pnet_virtio.</td>
+</tr>
+<tr class="row-odd"><td>Port IO filter</td>
+<td>Limits a set of IO ports that can be used for communication between a TD
+guest kernel and the host/VMM. This feature is needed in addition to the
+above driver filtering mechanism, because should some drivers escape this
+mechanism, its port IO communication with the host/VMM will be limited to a
+small set of allowed ports. For example, some linux drivers might perform
+port IO reads in their initialization functions before doing the driver
+registration or some legacy drivers might not utilize the modern driver
+registration interface at all and therefore would be allowed by the above
+driver filter. In any case port IO filter makes sure that only a limited
+number of ports are allowed to be communicating with host/VMM. The port IO
+allow list can be found in section 2.5) IO ports of
+<a class="reference internal" href="security-spec.html#security-spec"><span class="std std-ref">Intel® Trust Domain Extension Linux* Guest Kernel Security Specification</span></a> . Note that in the decompressed mode, the port IO
+filter is not active and therefore it is only applicable for early port IO
+and normal port IO.</td>
+</tr>
+<tr class="row-even"><td>ACPI table allow list</td>
+<td>TDX virtual firmware (TDVF, for details see
+<a class="reference external" href="https://www.intel.com/content/dam/develop/external/us/en/documents/tdx-virtual-firmware-design-guide-rev-1.pdf">https://www.intel.com/content/dam/develop/external/us/en/documents/tdx-virtual-firmware-design-guide-rev-1.pdf</a>)
+measures a set of ACPI tables obtained from the host/VMM into TDX RTMR[
+0] measurement register. Thus, the set of tables passed by the host/VMM can
+be remotely attested and verified. However, it can be difficult for a
+remote verifier to understand the possible consequences from using a big
+set of various ACPI tables. Since most of the tables are not needed for a
+TDX guest, the implemented ACPI table allow list limits them to a small,
+predefined list with a possibility to pass additional tables via a command
+line option. The current allow list is limited to the following tables:
+XSDT, FACP, DSDT, FACS, APIC, and SVKL. Note that a presence of a minimal
+ACPI table configuration does not by itself guarantee the overall security
+hardening of ACPI subsystem in the TD guest kernel. The known limitations
+on ACPI hardening are described in section 7 of <a class="reference internal" href="security-spec.html#security-spec"><span class="std std-ref">Intel® Trust Domain Extension Linux* Guest Kernel Security Specification</span></a>.</td>
+</tr>
+<tr class="row-odd"><td>KVM CPUID allow list and KVM hypercalls</td>
+<td>KVM supports a set of hypercalls that a TD guest kernel can request a VMM to
+perform. On x86, this set is defined by a set of exposed CPUID bits. Some
+of the hypercalls can result in untrusted data being passed from a VMM
+KVM) to the guest kernel. To limit this attack vector, the implemented KVM
+CPUID allow list restricts the available KVM CPUID bits to a small
+predefined allow list. More information can be found in sections 3.6 and
+3.7 of <a class="reference internal" href="security-spec.html#security-spec"><span class="std std-ref">Intel® Trust Domain Extension Linux* Guest Kernel Security Specification</span></a>.</td>
+</tr>
+</tbody>
+</table>
 </div>
 <div class="section" id="explicitly-disabled-functionality">
 <h4>Explicitly disabled functionality</h4>
@@ -302,7 +364,7 @@ next section. The decision to disable this functionality was made based
 on the amount of code that would have to be manually audited, complexity
 of the code involved, as well as the fact that this functionality is not
 needed for the TD guest kernel.</p>
-<table border="1" class="colwidths-given docutils" id="id7">
+<table border="1" class="colwidths-given docutils" id="id8">
 <caption><span class="caption-text">Features</span></caption>
 <colgroup>
 <col width="20%" />
@@ -495,7 +557,7 @@ manually by looking at each reported code location and verifying that
 the consumed host input is used in a secure way.</p>
 <p>Each finding is therefore manually classified into one of the following
 statuses:</p>
-<table border="1" class="colwidths-given docutils" id="id8">
+<table border="1" class="colwidths-given docutils" id="id9">
 <caption><span class="caption-text">Findings</span></caption>
 <colgroup>
 <col width="20%" />
@@ -720,7 +782,7 @@ protocol that may lead to security issues.</p>
 <li>Identify stop-point in the snapshot</li>
 <li>Fuzz target using KF/x</li>
 </ol>
-<div class="figure" id="id9">
+<div class="figure" id="id10">
 <a class="reference internal image-reference" href="_images/kf-x-overview.png"><img alt="_images/kf-x-overview.png" src="_images/kf-x-overview.png" style="width: 5.86458in; height: 3.29883in;" /></a>
 <p class="caption"><span class="caption-text">Figure 4. KF/x overview</span></p>
 </div>
@@ -803,7 +865,7 @@ usage of fuzz injection input hooks that have been added to these
 wrappers.</p>
 <div class="section" id="id1">
 <h5>Overview</h5>
-<div class="figure" id="id10">
+<div class="figure" id="id11">
 <a class="reference internal image-reference" href="_images/kAFL-runtime-overview.png"><img alt="_images/kAFL-runtime-overview.png" src="_images/kAFL-runtime-overview.png" style="width: 3.60417in; height: 3.98958in;" /></a>
 <p class="caption"><span class="caption-text">Figure 5. [kAFL runtime fuzzing overview. 1) start of fuzzing 2)
 input fuzz buffer from host 3) stimulus is consumed from userspace
@@ -870,7 +932,7 @@ sub-systems and automated reporting and recovery from typical error
 conditions such as panic() or KASAN handlers.</p>
 <div class="section" id="id3">
 <h4>Overview</h4>
-<div class="figure" id="id11">
+<div class="figure" id="id12">
 <a class="reference internal image-reference" href="_images/kAFL-overview.png"><img alt="_images/kAFL-overview.png" src="_images/kAFL-overview.png" style="width: 3.48364in; height: 3.73366in;" /></a>
 <p class="caption"><span class="caption-text">Figure 6. [kAFL overview. 1) start of fuzzing (entry to kernel) 2)
 fuzzing harness 3) input fuzz buffer from host 4) MSR/PIO/MMIO causes a
@@ -1055,7 +1117,7 @@ event is signaled via debugfs.</p>
 </div>
 <div class="section" id="id5">
 <h3>3.11) Basic operation</h3>
-<div class="figure" id="id12">
+<div class="figure" id="id13">
 <a class="reference internal image-reference" href="_images/example-harness.png"><img alt="_images/example-harness.png" src="_images/example-harness.png" style="width: 5.00000in; height: 3.48958in;" /></a>
 <p class="caption"><span class="caption-text">Example harness (downloaded and launched from initrd/launcher):</span></p>
 </div>
